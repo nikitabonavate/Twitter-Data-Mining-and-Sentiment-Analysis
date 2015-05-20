@@ -1,9 +1,10 @@
 #Registering with Twitter API
 
 #Uploading the libraries
-
+library(twitteR)
+library(ROAuth)
 library(plyr)
-library(string)
+library(RCurl)
 
 #Windows users need to download this file
 download.file(url="http://curl.haxx.se/ca/cacert.pem", destfile="cacert.pem")
@@ -102,7 +103,7 @@ tweets.scores = score.sentiment(lebowski$text, pos.words,neg.words, .progress = 
 #Percentage of negative, positive & neutral polarity
 table(lebowski$score)
 
-#Saving the scored file i csv format in computer
+#Saving the scored file in csv format in computer
 write.csv(tweets.scores,file="D:\\ScoredLebowski.csv",row.names=TRUE)
 
 
