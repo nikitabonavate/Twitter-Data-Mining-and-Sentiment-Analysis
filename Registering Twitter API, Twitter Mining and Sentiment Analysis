@@ -29,7 +29,7 @@ save(twitCred, file="twitter.authentication.Rdata")
 ##Registeration done now
 
 ######################
-#Once Regsiteration is done. Use the below code
+#Downloading the Twitter Data.
 library(twitteR)
 load('twitter.authentication.Rdata')
 registerTwitterOAuth(twitCred)
