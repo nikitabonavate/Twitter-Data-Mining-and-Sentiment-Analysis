@@ -1,0 +1,110 @@
+#Registering with Twitter API
+
+#Uploading the libraries
+
+library(plyr)
+library(string)
+
+#Windows users need to download this file
+download.file(url="http://curl.haxx.se/ca/cacert.pem", destfile="cacert.pem")
+
+##Start. Get the consumerkey & secret key from twitter API. Every twitter user has this
+reqURL <- "https://api.twitter.com/oauth/request_token"
+accessURL <- "https://api.twitter.com/oauth/access_token"
+authURL <- "http://api.twitter.com/oauth/authorize"
+consumerKey <- "xxxxxxxxxxxxxxxxxxxxxxxxx"
+consumerSecret <- "xxxxxxxxxxxxxxx"
+twitCred <- OAuthFactory$new(consumerKey=consumerKey,
+consumerSecret=consumerSecret,
+requestURL=reqURL,
+accessURL=accessURL,
+authURL=authURL)
+twitCred$handshake(cainfo="cacert.pem")
+#twitter will ask for PIN. Click on the link provided and note down the key. #Use https:\\ instead of http
+
+#Register your account with twitter API
+registerTwitterOAuth(twitCred)
+save(twitCred, file="twitter.authentication.Rdata")
+##Registeration done now
+
+######################
+#Once Regsiteration is done. Use the below code
+library(twitteR)
+load('twitter.authentication.Rdata')
+registerTwitterOAuth(twitCred)
+
+#Search tweets related to The Big lebowski
+s.list <- searchTwitter('the big lebowski', n=1000, lang=NULL, cainfo="cacert.pem") ## lang="en" for english
+s.df = twListToDF(s.list)
+
+#Save the data in .csv file in computer
+write.csv(s.df, file="d://Lebowski.csv", row.names=F)
+##############################
+##Now doing the sentiment analysis
+library(plyr)
+library(stringr)
+
+score.sentiment = function(sentences, pos.words, neg.words, .progress = "none")  
+{
+  scores = laply(sentences, function(sentence, pos.words, neg.words) {
+    sentence = gsub('[[:punct:]]', '', sentence)  
+    
+    sentence = gsub('[[:cntrl:]]', '', sentence)  
+    
+    sentence = gsub('\\d+', '', sentence)
+    sentence = tolower(sentence)  
+    
+    # split into words. str_split is in the stringr package  
+    
+    word.list = strsplit(sentence, '\\s+')  
+    
+    # sometimes a list() is one level of hierarchy too much  
+    
+    words = unlist(word.list)  
+    
+    # compare our words to the dictionaries of positive & negative terms  
+    
+    pos.matches = match(words, pos.words)  
+    neg.matches = match(words, neg.words)  
+    
+    # match() returns the position of the matched term or NA  
+    # we just want a TRUE/FALSE:  
+    
+    pos.matches = !is.na(pos.matches)  
+    
+    neg.matches = !is.na(neg.matches)  
+    
+    # and conveniently enough, TRUE/FALSE will be treated as 1/0 by sum():  
+    
+    score = sum(pos.matches) - sum(neg.matches)  
+    
+    return(score)  
+    
+  }, pos.words, neg.words, .progress = .progress )  
+  scores.df = data.frame(score=scores, text=sentences)  
+  return(scores.df)  
+} 
+
+#Loading the a list of words from computer termed as positive & negative. It will compare the words of Lebowski.csv sheet
+negative_words <- scan('E:\\Work\\R Coding\\New folder\\Twitter Data Mining\\opinion-lexicon-English\\negative-words.txt', what='character', comment.char=';')
+positive_words <- scan('E:\\Work\\R Coding\\New folder\\Twitter Data Mining\\opinion-lexicon-English\\positive-words.txt', what='character', comment.char=';')
+
+#Adding new words as +ve and -ne in the list of words
+pos.words = c(positive_words, 'far out', 'dude')
+neg.words = c(negative_words, 'wtf', 'cunt','fuck', 'epicfail')
+
+lebowski <- read.csv(file="D:\\Lebowski.csv", stringsAsFactors=FALSE)
+lebowski$text<-as.factor(lebowski$text)
+
+#Scoring the tweets on the basis of list of words
+tweets.scores = score.sentiment(lebowski$text, pos.words,neg.words, .progress = "text")
+
+#Percentage of negative, positive & neutral polarity
+table(lebowski$score)
+
+#Saving the scored file i csv format in computer
+write.csv(tweets.scores,file="D:\\ScoredLebowski.csv",row.names=TRUE)
+
+
+
+
